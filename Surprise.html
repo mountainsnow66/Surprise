@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>祝生日快乐</title>
+    <style>
+        * {
+            /* 哈哈哈，如果你能看到源代码那就太细心了，送你一个小彩蛋，生日快乐！！！ */
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(160deg, #fff5f8 0%, #ffe4ec 40%, #ffd6e4 70%, #ffcce0 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 20% 80%, rgba(255, 182, 193, 0.4) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(255, 215, 0, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* 烟花画布 */
+        #fireworksCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+
+        /* 初始欢迎界面 */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(165deg, #fff5f8 0%, #ffe4ec 50%, #ffd6e4 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            color: #1d1d1f;
+            gap: 36px;
+            padding: 0 40px;
+        }
+
+        .start-screen::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 182, 193, 0.25) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .type-text {
+            font-size: 26px;
+            font-weight: 400;
+            text-align: center;
+            min-height: 44px;
+            white-space: pre-wrap;
+            letter-spacing: 2px;
+            color: #1d1d1f;
+            text-shadow: 0 0 20px rgba(255, 182, 193, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 日期滚轮容器 */
+        .date-roller-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .date-roller-label {
+            font-size: 20px;
+            color: #1d1d1f;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+
+        .date-roller {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 182, 193, 0.5);
+            box-shadow: 0 4px 20px rgba(212, 122, 156, 0.2);
+        }
+
+        .roller-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            height: 40px;
+            perspective: 120px;
+        }
+
+        .roller-unit .num {
+            font-size: 22px;
+            font-weight: 500;
+            color: #1d1d1f;
+            line-height: 40px;
+            min-width: 1.4em;
+            text-align: center;
+            text-shadow: 0 0 12px rgba(255, 182, 193, 0.3);
+            transform-style: preserve-3d;
+        }
+
+        .roller-unit .num.rolling {
+            animation: rollFlip 1.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+        }
+
+        @keyframes rollFlip {
+            0% { transform: rotateX(0deg); opacity: 1; }
+            49% { transform: rotateX(-90deg); opacity: 0.1; }
+            50% { transform: rotateX(90deg); opacity: 0.1; }
+            100% { transform: rotateX(0deg); opacity: 1; }
+        }
+
+        .roller-sep {
+            font-size: 20px;
+            color: #d47a9c;
+            margin: 0 2px;
+        }
+
+        .surprise-btn {
+            padding: 18px 48px;
+            background: linear-gradient(135deg, #e8a4b8 0%, #c75d7a 50%, #b84a6a 100%);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            font-size: 17px;
+            font-weight: 500;
+            letter-spacing: 4px;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(24px);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 20px rgba(199, 93, 122, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .surprise-btn.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .surprise-btn:hover {
+            box-shadow: 0 8px 32px rgba(199, 93, 122, 0.5),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .surprise-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* 礼物盒子界面（默认隐藏） */
+        .gift-box {
+            width: 100%;
+            max-width: 420px;
+            aspect-ratio: 9 / 16;
+            background: linear-gradient(180deg, #ffffff 0%, #fff5f8 100%);
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(212, 122, 156, 0.25),
+                        0 0 0 1px rgba(255, 182, 193, 0.3);
+            overflow: hidden;
+            position: relative;
+            display: none;
+        }
+
+        .page2 {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 36px 28px;
+            background: linear-gradient(180deg, #ffffff 0%, #fff5f8 100%);
+            z-index: 1;
+        }
+
+        .top-image {
+            width: 100%;
+            height: auto;
+            border-radius: 18px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 24px rgba(212, 122, 156, 0.15);
+        }
+
+        .gift-card {
+            background: linear-gradient(145deg, #fff9fb 0%, #fff0f5 100%);
+            border-radius: 18px;
+            padding: 24px;
+            border: 1px solid rgba(255, 182, 193, 0.4);
+            margin-bottom: 18px;
+        }
+
+        .gift-name {
+            font-size: 18px;
+            color: #1d1d1f;
+            text-align: center;
+            margin-bottom: 18px;
+            font-weight: 500;
+            letter-spacing: 2px;
+        }
+
+        .gift-note {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 182, 193, 0.3);
+            box-shadow: 0 2px 15px rgba(212, 122, 156, 0.08);
+        }
+
+        .note-text {
+            font-size: 18px;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .note-from {
+            font-size: 14px;
+            color: #d47a9c;
+        }
+
+        .pickup-tip {
+            background: linear-gradient(145deg, #fff5f8 0%, #ffe4ec 100%);
+            border-radius: 18px;
+            padding: 22px;
+            text-align: center;
+            font-size: 17px;
+            color: #1d1d1f;
+            font-weight: 500;
+            border: 1px solid rgba(255, 182, 193, 0.4);
+            margin-top: 8px;
+        }
+
+        .page1 {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(165deg, #fff5f8 0%, #ffe4ec 50%, #ffd6e4 100%);
+            border-radius: 28px;
+            z-index: 10;
+            clip-path: circle(100% at center);
+            transition: clip-path 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+            will-change: clip-path, opacity;
+            box-shadow: inset 0 0 60px rgba(255, 182, 193, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 30px;
+        }
+
+        .cute-icon {
+            font-size: 110px;
+            margin-bottom: 36px;
+            animation: bounce 2.2s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 182, 193, 0.3));
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.08) translateY(-6px); }
+        }
+
+        .greeting-title {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 30px rgba(255, 182, 193, 0.3);
+        }
+
+        .greeting-sub {
+            font-size: 16px;
+            color: #d47a9c;
+            letter-spacing: 1px;
+        }
+
+        /* 左上角立体揭开效果 - 3D 纸张卷起 */
+        .fold-corner-wrap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 88px;
+            height: 88px;
+            cursor: grab;
+            z-index: 15;
+            perspective: 500px;
+            transform-style: preserve-3d;
+        }
+
+        .fold-corner-wrap:active {
+            cursor: grabbing;
+        }
+
+        /* 折角投射的阴影 */
+        .fold-corner-wrap::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: -4px;
+            bottom: -4px;
+            background: radial-gradient(ellipse 60% 40% at 20% 20%, rgba(0, 0, 0, 0.18) 0%, transparent 70%);
+            border-bottom-right-radius: 28px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* 立体折角本体 */
+        .fold-corner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(225deg, #f9a8d4 0%, #e879f9 35%, #a78bfa 100%);
+            border-bottom-right-radius: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 26px;
+            user-select: none;
+            transform-origin: top left;
+            transform: rotateX(-18deg) rotateY(-18deg) rotateZ(0deg);
+            box-shadow: 6px 6px 24px rgba(0, 0, 0, 0.2),
+                        2px 2px 8px rgba(167, 139, 250, 0.25),
+                        inset 1px 1px 0 rgba(255, 255, 255, 0.4),
+                        inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+            backface-visibility: visible;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        /* 折痕线 - 增强立体感 */
+        .fold-corner::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-bottom-right-radius: 26px;
+            background: linear-gradient(135deg, transparent 45%, rgba(0, 0, 0, 0.08) 50%, transparent 55%);
+            pointer-events: none;
+        }
+
+        .fold-corner-wrap:hover .fold-corner {
+            transform: rotateX(-22deg) rotateY(-22deg);
+            box-shadow: 8px 8px 28px rgba(0, 0, 0, 0.22),
+                        3px 3px 10px rgba(167, 139, 250, 0.3),
+                        inset 1px 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .float-element {
+            position: absolute;
+            z-index: 2;
+            pointer-events: none;
+            animation: float 9s ease-in-out infinite;
+        }
+
+        .float-element.dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #f8bbd0;
+            box-shadow: 0 0 12px rgba(255, 182, 193, 0.6);
+        }
+
+        .float-element.shape {
+            width: 10px;
+            height: 10px;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            background: #d47a9c;
+            box-shadow: 0 0 16px rgba(255, 182, 193, 0.5);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.8; }
+            25% { transform: translate(24px, -16px) rotate(90deg); opacity: 1; }
+            50% { transform: translate(12px, -32px) rotate(180deg); opacity: 0.9; }
+            75% { transform: translate(-12px, -16px) rotate(270deg); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="fireworksCanvas"></canvas>
+
+    <div class="start-screen" id="startScreen">
+        <div class="type-text" id="typeText"></div>
+        <div class="date-roller-wrap" id="dateRollerWrap" style="display: none;">
+            <div class="date-roller-label">今天是</div>
+            <div class="date-roller">
+                <div class="roller-unit" id="rollerYear"><span class="num" id="numYear">2026</span></div>
+                <span class="roller-sep">年</span>
+                <div class="roller-unit" id="rollerMonth"><span class="num" id="numMonth">2</span></div>
+                <span class="roller-sep">月</span>
+                <div class="roller-unit" id="rollerDay"><span class="num" id="numDay">28</span></div>
+                <span class="roller-sep">日</span>
+                <div class="roller-unit" id="rollerWeek"><span class="num" id="numWeek">星期六</span></div>
+            </div>
+        </div>
+        <button class="surprise-btn" id="surpriseBtn">接受惊喜</button>
+    </div>
+
+    <div class="gift-box" id="giftBox">
+        <div class="page2">
+            <img class="top-image" src="https://pic.82314912.xyz/api/cfile/AgACAgEAAyEGAATEcCnBAAILPWmbCiYT6yo5c_IkhRelU18SZE4hAAK9C2sb1iHZRBRmb5wyKaToAQADAgADeQADOgQ" >
+            
+            <div class="float-element dot" style="top: 25%; right: 10%; animation-delay: 1s;"></div>
+            <div class="float-element shape" style="top: 60%; left: 15%; animation-delay: 2s;"></div>
+            <div class="float-element dot" style="top: 85%; right: 20%; animation-delay: 3s;"></div>
+
+            <div class="gift-card">
+                <p class="gift-name">惊喜礼物</p>
+                <div class="gift-note">
+                    <p class="note-text">新岁启封，美好常驻</p>
+                    <p class="note-from">来自 Sean</p>
+                </div>
+            </div>
+
+            <div class="pickup-tip">
+               请开学后找我领取哦～
+            </div>
+        </div>
+
+        <div class="page1" id="page1">
+            <div class="cute-icon">🎁</div>
+            <h1 class="greeting-title">新岁启封，美好常驻</h1>
+            <p class="greeting-sub">来自 Sean</p>
+        </div>
+
+        <div class="fold-corner-wrap" id="foldCornerWrap">
+            <div class="fold-corner" id="foldCorner">✧</div>
+        </div>
+    </div>
+
+    <script>
+(function() {
+    'use strict';
+
+    const CONFIG = {
+        texts: ['hello，早上好', null, '生日快乐！'],
+        targetDate: { year: 2026, month: 3, day: 1, week: 0 },
+        weekdays: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+        fireworkPalettes: [
+            ['#7dd3fc', '#38bdf8', '#0ea5e9', '#fff'],
+            ['#f9a8d4', '#f472b6', '#ec4899', '#fff'],
+            ['#fbbf24', '#f59e0b', '#fcd34d', '#fff'],
+            ['#a78bfa', '#c084fc', '#e879f9', '#fff'],
+            ['#34d399', '#2dd4bf', '#5eead4', '#fff'],
+            ['#fb923c', '#f97316', '#fdba74', '#fff']
+        ]
+    };
+
+    const $ = id => document.getElementById(id);
+    const canvas = $('fireworksCanvas');
+    const ctx = canvas.getContext('2d');
+    const typeText = $('typeText');
+    const surpriseBtn = $('surpriseBtn');
+    const startScreen = $('startScreen');
+    const giftBox = $('giftBox');
+    const dateRollerWrap = $('dateRollerWrap');
+    const rollerEls = {
+        year: $('numYear'), month: $('numMonth'),
+        day: $('numDay'), week: $('numWeek')
+    };
+
+    let bursts = [];
+    let rafId = null;
+
+    function resizeCanvas() {
+        const w = window.innerWidth, h = window.innerHeight;
+        if (canvas.width !== w || canvas.height !== h) {
+            canvas.width = w;
+            canvas.height = h;
+        }
+    }
+
+    function initCanvas() {
+        resizeCanvas();
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(resizeCanvas, 100);
+        });
+    }
+
+    class PixelBurst {
+        constructor(cx, cy, palette) {
+            this.cx = cx;
+            this.cy = cy;
+            this.palette = palette;
+            this.dots = [];
+            this.alpha = 1;
+            this.decay = 0.003;
+            this.frame = 0;
+            const n = 280 + Math.floor(Math.random() * 80);
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 3;
+                this.dots.push({
+                    x: 0, y: 0,
+                    vx: Math.cos(a) * speed,
+                    vy: Math.sin(a) * speed,
+                    friction: 0.98 + Math.random() * 0.015,
+                    size: 0.6 + Math.random() * 1.2,
+                    color: palette[Math.floor(Math.random() * palette.length)]
+                });
+            }
+        }
+        update() {
+            this.frame++;
+            for (const d of this.dots) {
+                d.x += d.vx;
+                d.y += d.vy;
+                d.vx *= d.friction;
+                d.vy *= d.friction;
+            }
+            if (this.frame > 80) this.alpha -= this.decay;
+            return this.alpha > 0;
+        }
+        draw() {
+            ctx.save();
+            for (const d of this.dots) {
+                const x = this.cx + d.x;
+                const y = this.cy + d.y;
+                const dist = Math.sqrt(d.x * d.x + d.y * d.y);
+                const edgeFade = Math.max(0, 1 - dist / 100);
+                ctx.globalAlpha = this.alpha * edgeFade;
+                ctx.fillStyle = d.color;
+                ctx.beginPath();
+                ctx.arc(x, y, d.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+    }
+
+    function fireworkLoop() {
+        if (!canvas.width || !canvas.height) {
+            rafId = requestAnimationFrame(fireworkLoop);
+            return;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        bursts = bursts.filter(b => { b.update(); b.draw(); return b.alpha > 0; });
+        if (bursts.length) rafId = requestAnimationFrame(fireworkLoop);
+    }
+
+    function createFirework() {
+        const w = canvas.width, h = canvas.height;
+        const cx = w * 0.2 + Math.random() * w * 0.6;
+        const cy = h * 0.25 + Math.random() * h * 0.5;
+        const palette = CONFIG.fireworkPalettes[Math.floor(Math.random() * CONFIG.fireworkPalettes.length)];
+        bursts.push(new PixelBurst(cx, cy, palette));
+        if (!rafId) rafId = requestAnimationFrame(fireworkLoop);
+    }
+
+    function showFireworks() {
+        createFirework();
+        setTimeout(createFirework, 1200);
+        setTimeout(createFirework, 2400);
+        setTimeout(createFirework, 3600);
+        setTimeout(createFirework, 4800);
+    }
+
+    function rollDateWheel() {
+        dateRollerWrap.style.display = 'flex';
+        dateRollerWrap.style.opacity = '0';
+        dateRollerWrap.style.transform = 'translateY(10px)';
+        dateRollerWrap.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        dateRollerWrap.offsetHeight;
+        dateRollerWrap.style.opacity = '1';
+        dateRollerWrap.style.transform = 'translateY(0)';
+
+        const T = CONFIG.targetDate;
+        const DURATION = 3600;
+
+        [rollerEls.month, rollerEls.day, rollerEls.week].forEach(el => el.classList.add('rolling'));
+        setTimeout(() => {
+            rollerEls.month.textContent = String(T.month);
+            rollerEls.day.textContent = String(T.day);
+            rollerEls.week.textContent = CONFIG.weekdays[T.week];
+            [rollerEls.month, rollerEls.day, rollerEls.week].forEach(el => el.classList.remove('rolling'));
+        }, 700);
+
+        setTimeout(() => {
+            dateRollerWrap.style.opacity = '0';
+            setTimeout(() => {
+                dateRollerWrap.style.display = 'none';
+                typeText.textContent = '';
+                runTypeEffect();
+            }, 500);
+        }, DURATION);
+    }
+
+    let textIndex = 0, charIndex = 0, isDeleting = false;
+
+    function runTypeEffect() {
+        if (textIndex === 1 && CONFIG.texts[1] === null) {
+            typeText.textContent = '';
+            rollDateWheel();
+            textIndex = 2;
+            return;
+        }
+        const current = CONFIG.texts[textIndex];
+        if (!current) return;
+        const speed = isDeleting ? 70 : 110;
+
+        if (isDeleting) charIndex--;
+        else charIndex++;
+        typeText.textContent = current.substring(0, charIndex);
+
+        if (!isDeleting && charIndex === current.length) {
+            if (textIndex === CONFIG.texts.length - 1) {
+                showFireworks();
+                setTimeout(() => surpriseBtn.classList.add('show'), 800);
+                return;
+            }
+            setTimeout(() => { isDeleting = true; }, 1300);
+        } else if (isDeleting && charIndex === 0) {
+            isDeleting = false;
+            textIndex++;
+        }
+        setTimeout(runTypeEffect, speed);
+    }
+
+    function initGiftAnimation() {
+        const page1 = $('page1');
+        const foldCornerWrap = $('foldCornerWrap');
+        let isDragging = false, radius = 100, centerX, centerY;
+
+        function getBoxRect() {
+            const r = giftBox.getBoundingClientRect();
+            return { w: r.width, h: r.height, left: r.left, top: r.top };
+        }
+        let box = getBoxRect();
+        centerX = 0;
+        centerY = 0;
+
+        window.addEventListener('resize', () => { box = getBoxRect(); });
+
+        function dragHandler(e) {
+            if (!isDragging) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            centerX = clientX - box.left;
+            centerY = clientY - box.top;
+            const dist = Math.hypot(centerX, centerY);
+            const maxDist = Math.hypot(box.w, box.h) * 0.6;
+            radius = Math.max(0, Math.min(100, 100 - (dist / maxDist * 100)));
+            page1.style.clipPath = `circle(${radius}% at ${centerX}px ${centerY}px)`;
+        }
+
+        function startDrag(e) {
+            if (e.touches) e.preventDefault();
+            isDragging = true;
+            document.addEventListener('mousemove', dragHandler);
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchmove', dragHandler, { passive: true });
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function endDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', dragHandler);
+            document.removeEventListener('touchmove', dragHandler);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchend', endDrag);
+            if (radius <= 10) {
+                page1.style.opacity = '0';
+                foldCornerWrap.style.opacity = '0';
+                setTimeout(() => {
+                    page1.style.display = 'none';
+                    foldCornerWrap.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        foldCornerWrap.addEventListener('mousedown', startDrag);
+        foldCornerWrap.addEventListener('touchstart', startDrag, { passive: false });
+    }
+
+    surpriseBtn.addEventListener('click', () => {
+        startScreen.style.transition = 'opacity 0.6s ease';
+        startScreen.style.opacity = '0';
+        canvas.style.opacity = '0';
+        setTimeout(() => {
+            startScreen.style.display = 'none';
+            giftBox.style.display = 'block';
+            initGiftAnimation();
+        }, 500);
+    });
+
+    initCanvas();
+    runTypeEffect();
+})();
+    </script>
+</body>
+</html>
