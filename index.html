@@ -92,31 +92,6 @@
         <div class="fold-corner">✧</div>
     </div>
 </div>
-<script>
-(function(){
-'use strict';
-const CONFIG={texts:['hello，早上好',null,'生日快乐！'],targetDate:{year:2026,month:3,day:1,week:0},weekdays:['星期日','星期一','星期二','星期三','星期四','星期五','星期六'],fireworkPalettes:[['#7dd3fc','#38bdf8','#0ea5e9','#fff'],['#f9a8d4','#f472b6','#ec4899','#fff'],['#fbbf24','#f59e0b','#fcd34d','#fff'],['#a78bfa','#c084fc','#e879f9','#fff'],['#34d399','#2dd4bf','#5eead4','#fff'],['#fb923c','#f97316','#fdba74','#fff']]};
-const $=id=>document.getElementById(id);
-const canvas=$('fireworksCanvas'),ctx=canvas.getContext('2d'),typeText=$('typeText'),surpriseBtn=$('surpriseBtn'),startScreen=$('startScreen'),giftBox=$('giftBox'),dateRollerWrap=$('dateRollerWrap'),rollerEls={year:$('numYear'),month:$('numMonth'),day:$('numDay'),week:$('numWeek')};
-let bursts=[],rafId=null;
-function resizeCanvas(){const w=window.innerWidth,h=window.innerHeight;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}}
-function initCanvas(){resizeCanvas();let t;window.addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(resizeCanvas,100)})}
-class PixelBurst{constructor(cx,cy,palette){this.cx=cx;this.cy=cy;this.palette=palette;this.dots=[];this.alpha=1;this.decay=.003;this.frame=0;const n=280+Math.floor(Math.random()*80);for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=1+Math.random()*3;this.dots.push({x:0,y:0,vx:Math.cos(a)*s,vy:Math.sin(a)*s,friction:.98+Math.random()*.015,size:.6+Math.random()*1.2,color:palette[Math.floor(Math.random()*palette.length)]})}}
-update(){this.frame++;for(const d of this.dots){d.x+=d.vx;d.y+=d.vy;d.vx*=d.friction;d.vy*=d.friction}if(this.frame>80)this.alpha-=this.decay;return this.alpha>0}
-draw(){ctx.save();for(const d of this.dots){const x=this.cx+d.x,y=this.cy+d.y,dist=Math.sqrt(d.x*d.x+d.y*d.y),edgeFade=Math.max(0,1-dist/100);ctx.globalAlpha=this.alpha*edgeFade;ctx.fillStyle=d.color;ctx.beginPath();ctx.arc(x,y,d.size,0,Math.PI*2);ctx.fill()}ctx.restore()}}
-function fireworkLoop(){if(!canvas.width||!canvas.height){rafId=requestAnimationFrame(fireworkLoop);return}ctx.clearRect(0,0,canvas.width,canvas.height);bursts=bursts.filter(b=>{b.update();b.draw();return b.alpha>0});if(bursts.length)rafId=requestAnimationFrame(fireworkLoop)}
-function createFirework(){const w=canvas.width,h=canvas.height,cx=w*.2+Math.random()*w*.6,cy=h*.25+Math.random()*h*.5,palette=CONFIG.fireworkPalettes[Math.floor(Math.random()*CONFIG.fireworkPalettes.length)];bursts.push(new PixelBurst(cx,cy,palette));if(!rafId)rafId=requestAnimationFrame(fireworkLoop)}
-function showFireworks(){createFirework();setTimeout(createFirework,1200);setTimeout(createFirework,2400);setTimeout(createFirework,3600);setTimeout(createFirework,4800)}
-function rollDateWheel(){dateRollerWrap.style.display='flex';dateRollerWrap.style.opacity='0';dateRollerWrap.style.transform='translateY(10px)';dateRollerWrap.style.transition='opacity .5s ease, transform .5s ease';dateRollerWrap.offsetHeight;dateRollerWrap.style.opacity='1';dateRollerWrap.style.transform='translateY(0)';const T=CONFIG.targetDate;[rollerEls.month,rollerEls.day,rollerEls.week].forEach(el=>el.classList.add('rolling'));setTimeout(()=>{rollerEls.month.textContent=String(T.month);rollerEls.day.textContent=String(T.day);rollerEls.week.textContent=CONFIG.weekdays[T.week];[rollerEls.month,rollerEls.day,rollerEls.week].forEach(el=>el.classList.remove('rolling'))},700);setTimeout(()=>{dateRollerWrap.style.opacity='0';setTimeout(()=>{dateRollerWrap.style.display='none';typeText.textContent='';runTypeEffect()},500)},3600)}
-let textIndex=0,charIndex=0,isDeleting=false;
-function runTypeEffect(){if(textIndex===1&&CONFIG.texts[1]===null){typeText.textContent='';rollDateWheel();textIndex=2;return}const current=CONFIG.texts[textIndex];if(!current)return;const speed=isDeleting?70:110;if(isDeleting)charIndex--;else charIndex++;typeText.textContent=current.substring(0,charIndex);if(!isDeleting&&charIndex===current.length){if(textIndex===CONFIG.texts.length-1){showFireworks();setTimeout(()=>surpriseBtn.classList.add('show'),800);return}setTimeout(()=>{isDeleting=true},1300)}else if(isDeleting&&charIndex===0){isDeleting=false;textIndex++}setTimeout(runTypeEffect,speed)}
-function initGiftAnimation(){const page1=$('page1'),foldCornerWrap=$('foldCornerWrap');let isDragging=false,radius=100,centerX=0,centerY=0;function getBoxRect(){const r=giftBox.getBoundingClientRect();return{w:r.width,h:r.height,left:r.left,top:r.top}}let box=getBoxRect();window.addEventListener('resize',()=>{box=getBoxRect()});function dragHandler(e){if(!isDragging)return;const clientX=e.touches?e.touches[0].clientX:e.clientX,clientY=e.touches?e.touches[0].clientY:e.clientY;centerX=clientX-box.left;centerY=clientY-box.top;const dist=Math.hypot(centerX,centerY),maxDist=Math.hypot(box.w,box.h)*.6;radius=Math.max(0,Math.min(100,100-dist/maxDist*100));page1.style.clipPath=`circle(${radius}% at ${centerX}px ${centerY}px)`}
-function startDrag(e){if(e.touches)e.preventDefault();isDragging=true;document.addEventListener('mousemove',dragHandler);document.addEventListener('mouseup',endDrag);document.addEventListener('touchmove',dragHandler,{passive:true});document.addEventListener('touchend',endDrag)}
-function endDrag(){isDragging=false;document.removeEventListener('mousemove',dragHandler);document.removeEventListener('touchmove',dragHandler);document.removeEventListener('mouseup',endDrag);document.removeEventListener('touchend',endDrag);if(radius<=10){page1.style.opacity='0';foldCornerWrap.style.opacity='0';setTimeout(()=>{page1.style.display='none';foldCornerWrap.style.display='none'},300)}}
-foldCornerWrap.addEventListener('mousedown',startDrag);foldCornerWrap.addEventListener('touchstart',startDrag,{passive:false})}
-surpriseBtn.addEventListener('click',()=>{startScreen.style.transition='opacity .6s ease';startScreen.style.opacity='0';canvas.style.opacity='0';setTimeout(()=>{startScreen.style.display='none';giftBox.style.display='block';initGiftAnimation()},500)});
-initCanvas();runTypeEffect();
-})();
-</script>
+<script src="script.js"></script>
 </body>
 </html>
